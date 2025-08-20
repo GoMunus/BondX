@@ -1,0 +1,10 @@
+columns
+"{'name': 'accordIcon', 'heading': '', 'subHead': '', 'width': '3%', 'sort': False, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False}"
+"{'name': 'isin', 'heading': 'ISIN', 'subHead': '', 'width': '10%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False}"
+"{'name': 'descriptor', 'heading': 'Descriptor', 'subHead': '', 'width': '32%', 'sort': False, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False}"
+"{'name': 'wap', 'heading': 'Weighted Average Price', 'subHead': '', 'width': '10%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False, 'format': 'currNumber'}"
+"{'name': 'ltp', 'heading': 'Last Trade Price', 'subHead': '', 'width': '8%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': True, 'sortHighLow': False, 'format': 'currNumber'}"
+"{'name': 'way', 'heading': 'Weighted <br />Average Yield', 'subHead': '(YTM) (%)', 'width': '10%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False, 'format': 'currNumber'}"
+"{'name': 'lty', 'heading': 'Last <br />Trade Yield ', 'subHead': '(Annualized) (%)', 'width': '10%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False, 'format': 'currNumber'}"
+"{'name': 'tradeValue', 'heading': 'Value', 'subHead': '(₹ Lakhs)', 'width': '9%', 'valueTyp': '1', 'valueFormat': 'lakhs', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False, 'format': 'number'}"
+"{'name': 'noOfTrades', 'heading': 'No. of<br/>Trades', 'subHead': '', 'width': '8%', 'sort': True, 'chkVal': False, 'chkHigh': False, 'chkLow': False, 'indicator': False, 'sortHighLow': False, 'format': 'quantity', 'type': 'quantity'}"
