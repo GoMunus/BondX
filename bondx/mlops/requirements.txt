@@ -1,0 +1,106 @@
+# BondX MLOps Dependencies
+# Core ML and data science packages
+
+# Scientific computing
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+
+# Machine learning
+scikit-learn>=1.0.0
+xgboost>=1.5.0
+lightgbm>=3.3.0
+
+# Model persistence and serialization
+joblib>=1.1.0
+pickle5>=0.0.11; python_version < "3.8"
+
+# Configuration and serialization
+pyyaml>=6.0
+pydantic>=1.9.0
+pydantic-settings>=2.0.0
+
+# System monitoring and utilities
+psutil>=5.8.0
+
+# Experiment tracking (optional)
+mlflow>=1.20.0; extra == "mlflow"
+wandb>=0.12.0; extra == "wandb"
+
+# Statistical analysis
+statsmodels>=0.13.0
+
+# Visualization (optional)
+matplotlib>=3.5.0; extra == "viz"
+seaborn>=0.11.0; extra == "viz"
+plotly>=5.0.0; extra == "viz"
+
+# Testing
+pytest>=6.2.0; extra == "test"
+pytest-cov>=3.0.0; extra == "test"
+pytest-mock>=3.6.0; extra == "test"
+
+# Development tools
+black>=22.0.0; extra == "dev"
+flake8>=4.0.0; extra == "dev"
+mypy>=0.950; extra == "dev"
+
+# Documentation
+sphinx>=4.5.0; extra == "docs"
+sphinx-rtd-theme>=1.0.0; extra == "docs"
+
+# Performance monitoring
+prometheus-client>=0.12.0; extra == "monitoring"
+
+# Logging and monitoring
+structlog>=21.5.0
+colorama>=0.4.4
+
+# Security
+cryptography>=3.4.0; extra == "security"
+
+# Database (optional)
+sqlalchemy>=1.4.0; extra == "database"
+alembic>=1.7.0; extra == "database"
+
+# Cloud storage (optional)
+boto3>=1.24.0; extra == "aws"
+google-cloud-storage>=2.0.0; extra == "gcp"
+azure-storage-blob>=12.0.0; extra == "azure"
+
+# Message queues (optional)
+redis>=4.0.0; extra == "queue"
+celery>=5.2.0; extra == "queue"
+
+# Web framework (optional)
+fastapi>=0.78.0; extra == "web"
+uvicorn>=0.17.0; extra == "web"
+
+# All extras
+[all]
+mlflow
+wandb
+viz
+test
+dev
+docs
+monitoring
+security
+database
+aws
+gcp
+azure
+queue
+web
+
+# Minimal installation (core functionality only)
+[core]
+numpy>=1.21.0
+pandas>=1.3.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+joblib>=1.1.0
+pyyaml>=6.0
+pydantic>=1.9.0
+pydantic-settings>=2.0.0
+psutil>=5.8.0

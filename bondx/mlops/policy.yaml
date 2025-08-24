@@ -1,0 +1,236 @@
+# BondX MLOps Policy Configuration
+# This file defines the policies for drift detection, canary deployment, and model promotion
+
+# Environment configuration
+environment: "development"
+seed: 42
+
+# Supported model types
+supported_models:
+  - "spread"
+  - "downgrade"
+  - "liquidity_shock"
+  - "anomaly"
+
+# Paths for storage
+model_storage_path: "./models"
+data_storage_path: "./data"
+log_path: "./logs"
+
+# Drift detection thresholds
+drift:
+  # Statistical drift thresholds
+  ks_test_threshold: 0.05
+  psi_threshold: 0.25
+  feature_drift_threshold: 0.1
+  
+  # Target drift thresholds
+  target_drift_threshold: 0.15
+  residual_drift_threshold: 0.2
+  
+  # Time-based drift detection
+  drift_check_interval_hours: 24
+  drift_window_days: 30
+
+# Canary deployment policy
+canary:
+  # Traffic splitting
+  initial_canary_percentage: 0.05  # 5%
+  max_canary_percentage: 0.20     # 20%
+  promotion_threshold: 0.95       # 95%
+  
+  # Evaluation criteria
+  evaluation_metrics:
+    - "mae"
+    - "rmse"
+    - "r2_score"
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+  
+  evaluation_window_hours: 48
+  
+  # Rollback conditions
+  rollback_threshold: 0.8         # 80%
+  max_rollback_count: 3
+
+# Model promotion gates
+promotion:
+  # Performance gates
+  min_accuracy: 0.85
+  max_drift: 0.1
+  
+  # Quality gates
+  require_explainability: true
+  require_feature_importance: true
+  require_bias_testing: true
+  
+  # Security gates
+  require_security_scan: true
+  require_compliance_check: true
+
+# Experiment tracking configuration
+tracking:
+  # Backend settings
+  tracking_backend: "local"  # Options: local, mlflow, weights_biases
+  tracking_uri: null
+  
+  # Logging settings
+  log_parameters: true
+  log_metrics: true
+  log_artifacts: true
+  log_environment: true
+  log_git_sha: true
+  
+  # Artifact storage
+  artifact_storage_path: "./mlruns"
+  max_artifact_size_mb: 100
+
+# Model-specific configurations
+models:
+  spread:
+    feature_columns:
+      - "coupon_rate"
+      - "maturity_years"
+      - "credit_rating"
+      - "issue_size"
+      - "sector"
+      - "currency"
+      - "yield_to_maturity"
+      - "duration"
+      - "convexity"
+      - "liquidity_score"
+      - "volatility"
+      - "correlation_market"
+    target_column: "spread_bps"
+    drift_thresholds:
+      feature_drift_threshold: 0.08
+      target_drift_threshold: 0.12
+  
+  downgrade:
+    feature_columns:
+      - "credit_rating"
+      - "debt_to_equity"
+      - "interest_coverage"
+      - "profit_margin"
+      - "revenue_growth"
+      - "sector"
+      - "maturity_years"
+      - "issue_size"
+      - "liquidity_score"
+    target_column: "downgrade_probability"
+    drift_thresholds:
+      feature_drift_threshold: 0.12
+      target_drift_threshold: 0.18
+  
+  liquidity_shock:
+    feature_columns:
+      - "liquidity_score"
+      - "bid_ask_spread"
+      - "volume"
+      - "market_cap"
+      - "sector"
+      - "credit_rating"
+      - "maturity_years"
+      - "volatility"
+      - "correlation_market"
+    target_column: "liquidity_shock_probability"
+    drift_thresholds:
+      feature_drift_threshold: 0.15
+      target_drift_threshold: 0.20
+  
+  anomaly:
+    feature_columns:
+      - "price_change"
+      - "volume_change"
+      - "spread_change"
+      - "yield_change"
+      - "credit_rating_change"
+      - "liquidity_change"
+      - "volatility_change"
+    target_column: "anomaly_score"
+    drift_thresholds:
+      feature_drift_threshold: 0.10
+      target_drift_threshold: 0.15
+
+# Retraining configuration
+retraining:
+  # Automatic retraining triggers
+  auto_retrain_on_drift: true
+  auto_retrain_on_performance_drop: true
+  
+  # Scheduled retraining
+  scheduled_retraining:
+    enabled: true
+    frequency: "monthly"  # Options: weekly, monthly, quarterly
+  
+  # Training parameters
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+  cross_validation_folds: 5
+  
+  # Hyperparameter tuning
+  hyperparameter_tuning: true
+  max_iterations: 100
+  early_stopping_patience: 10
+
+# Monitoring and alerting
+monitoring:
+  # Performance monitoring
+  performance_check_interval_minutes: 15
+  alert_on_performance_drop: true
+  performance_drop_threshold: 0.1
+  
+  # Drift monitoring
+  drift_check_interval_hours: 24
+  alert_on_drift: true
+  critical_drift_threshold: 0.3
+  
+  # Model health checks
+  health_check_interval_minutes: 30
+  alert_on_health_issues: true
+
+# Security and compliance
+security:
+  # Access control
+  require_authentication: true
+  require_authorization: true
+  
+  # Audit logging
+  log_all_operations: true
+  audit_log_retention_days: 365
+  
+  # Data privacy
+  anonymize_sensitive_data: true
+  encrypt_model_artifacts: true
+  
+  # Compliance
+  regulatory_frameworks:
+    - "Basel III"
+    - "IFRS 9"
+    - "MiFID II"
+  
+  compliance_checks:
+    - "data_quality"
+    - "model_fairness"
+    - "bias_detection"
+    - "explainability"
+
+# Backup and recovery
+backup:
+  # Model backup
+  backup_models: true
+  backup_frequency: "daily"
+  backup_retention_days: 90
+  
+  # Configuration backup
+  backup_configs: true
+  backup_frequency: "weekly"
+  backup_retention_days: 365
+  
+  # Disaster recovery
+  disaster_recovery_enabled: true
+  recovery_point_objective_hours: 4
+  recovery_time_objective_hours: 8
