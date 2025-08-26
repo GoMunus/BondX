@@ -29,6 +29,7 @@ from .ai_risk_engine.ai_service_layer import ai_service
 from .trading_engine.order_manager import OrderManager
 from .trading_engine.execution_engine import ExecutionEngine
 from .risk_management.portfolio_risk import PortfolioRiskManager
+from .websocket.unified_websocket_manager import UnifiedWebSocketManager
 
 logger = get_logger(__name__)
 
@@ -141,6 +142,12 @@ async def lifespan(app: FastAPI):
         # For now, we'll just log that they're available
         logger.info("Risk management components available")
         
+        # Initialize WebSocket manager
+        logger.info("Initializing WebSocket manager...")
+        websocket_manager = UnifiedWebSocketManager()
+        await websocket_manager.start()
+        logger.info("WebSocket manager initialized successfully")
+        
         # Initialize other services here
         # await init_redis()
         # await init_celery()
@@ -169,13 +176,19 @@ async def lifespan(app: FastAPI):
             logger.info("Cleaning up trading engine components...")
             # Note: Proper cleanup would be implemented here
             
-            # Cleanup risk management components
-            logger.info("Cleaning up risk management components...")
-            # Note: Proper cleanup would be implemented here
-            
-            # Close other services here
-            # await close_redis()
-            # await close_celery()
+                    # Cleanup risk management components
+        logger.info("Cleaning up risk management components...")
+        # Note: Proper cleanup would be implemented here
+        
+        # Cleanup WebSocket manager
+        logger.info("Cleaning up WebSocket manager...")
+        if 'websocket_manager' in locals():
+            await websocket_manager.stop()
+        logger.info("WebSocket manager cleanup completed")
+        
+        # Close other services here
+        # await close_redis()
+        # await close_celery()
             
         except Exception as e:
             logger.error("Error during shutdown", error=str(e))

@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bondx-backend-pdb
+  namespace: bondx
+  labels:
+    app: bondx-backend
+    environment: production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: bondx-backend
+      environment: production
+---
+# PDB for critical services
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bondx-critical-pdb
+  namespace: bondx
+  labels:
+    app: bondx-backend
+    environment: production
+    tier: critical
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: bondx-backend
+      environment: production
+      tier: critical

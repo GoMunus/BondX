@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bondx-config
+  namespace: bondx
+  labels:
+    app: bondx-backend
+    environment: production
+data:
+  # Application configuration
+  APP_NAME: "BondX Backend"
+  APP_VERSION: "0.1.0"
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  
+  # Server configuration
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  WORKERS: "4"
+  RELOAD: "false"
+  
+  # Database configuration
+  DATABASE_POOL_SIZE: "20"
+  DATABASE_MAX_OVERFLOW: "30"
+  DATABASE_POOL_TIMEOUT: "30"
+  DATABASE_POOL_RECYCLE: "3600"
+  DATABASE_QUERY_TIMEOUT: "30"
+  DATABASE_MAX_CONCURRENT_QUERIES: "100"
+  
+  # Redis configuration
+  REDIS_POOL_SIZE: "20"
+  REDIS_MAX_CONNECTIONS: "50"
+  
+  # Celery configuration
+  CELERY_TASK_SERIALIZER: "json"
+  CELERY_RESULT_SERIALIZER: "json"
+  CELERY_ACCEPT_CONTENT: "json"
+  CELERY_TIMEZONE: "Asia/Kolkata"
+  CELERY_ENABLE_UTC: "true"
+  
+  # Cache configuration
+  CACHE_TTL: "300"
+  CACHE_MAX_SIZE: "10000"
+  CACHE_STALE_WHILE_REVALIDATE: "60"
+  
+  # Rate limiting
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+  RATE_LIMIT_BURST: "200"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  LOG_MAX_SIZE: "100MB"
+  LOG_BACKUP_COUNT: "5"
+  
+  # Monitoring
+  PROMETHEUS_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+  
+  # WebSocket configuration
+  WEBSOCKET_MAX_CONNECTIONS: "1000"
+  WEBSOCKET_PING_INTERVAL: "30"
+  WEBSOCKET_PING_TIMEOUT: "10"
+  
+  # Background tasks
+  BACKGROUND_MAX_TASKS: "50"
+  BACKGROUND_TASK_TIMEOUT: "300"
+  BACKGROUND_RETRY_ATTEMPTS: "3"
+  BACKGROUND_RETRY_DELAY: "60"
+  
+  # Performance
+  BATCH_PROCESSING_SIZE: "5000"
+  
+  # Compliance
+  AUDIT_LOG_ENABLED: "true"
+  DATA_RETENTION_DAYS: "2555"
+  ENCRYPTION_ENABLED: "true"
+  
+  # Data quality
+  VALIDATION_ENABLED: "true"
+  OUTLIER_DETECTION_THRESHOLD: "3.0"
+  DATA_FRESHNESS_THRESHOLD: "3600"
+  
+  # Indian market specific
+  TIMEZONE: "Asia/Kolkata"
+  MARKET_HOLIDAYS_FILE: "data/market_holidays.json"
+  SETTLEMENT_CYCLES_FILE: "data/settlement_cycles.json"
+  
+  # Market data
+  MARKET_DATA_UPDATE_INTERVAL: "300"
+  MARKET_DATA_RETENTION_DAYS: "365"
+  MARKET_DATA_BATCH_SIZE: "1000"

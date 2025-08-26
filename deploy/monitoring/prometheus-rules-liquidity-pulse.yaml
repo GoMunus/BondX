@@ -1,0 +1,279 @@
+# Prometheus Alerting Rules for BondX Liquidity Pulse
+# This file defines alerting rules for monitoring the Liquidity Pulse system
+
+groups:
+  - name: liquidity_pulse_critical
+    rules:
+      # High uncertainty alerts
+      - alert: HighPulseUncertainty
+        expr: bondx_liquidity_pulse_uncertainty > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: core-metrics
+        annotations:
+          summary: "High pulse uncertainty detected for {{ $labels.isin }}"
+          description: "Liquidity pulse uncertainty is {{ $value }} for ISIN {{ $labels.isin }}. This may indicate poor data quality or model instability."
+          runbook_url: "https://bondx.com/runbooks/liquidity-pulse-uncertainty"
+
+      # Low liquidity index alerts
+      - alert: LowLiquidityIndex
+        expr: bondx_liquidity_pulse_liquidity_index < 30
+        for: 3m
+        labels:
+          severity: critical
+          service: liquidity-pulse
+          component: core-metrics
+        annotations:
+          summary: "Low liquidity index detected for {{ $labels.isin }}"
+          description: "Liquidity index is {{ $value }} for ISIN {{ $labels.isin }}. This indicates poor market liquidity and may require immediate attention."
+          runbook_url: "https://bondx.com/runbooks/low-liquidity-index"
+
+      # Low repayment support alerts
+      - alert: LowRepaymentSupport
+        expr: bondx_liquidity_pulse_repayment_support < 40
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: core-metrics
+        annotations:
+          summary: "Low repayment support detected for {{ $labels.isin }}"
+          description: "Repayment support index is {{ $value }} for ISIN {{ $labels.isin }}. This indicates deteriorating fundamental support."
+          runbook_url: "https://bondx.com/runbooks/low-repayment-support"
+
+      # Low BondX score alerts
+      - alert: LowBondXScore
+        expr: bondx_liquidity_pulse_bondx_score < 35
+        for: 3m
+        labels:
+          severity: critical
+          service: liquidity-pulse
+          component: core-metrics
+        annotations:
+          summary: "Low BondX score detected for {{ $labels.isin }}"
+          description: "BondX score is {{ $value }} for ISIN {{ $labels.isin }}. This indicates significant risk and requires immediate review."
+          runbook_url: "https://bondx.com/runbooks/low-bondx-score"
+
+  - name: liquidity_pulse_performance
+    rules:
+      # High calculation latency alerts
+      - alert: HighCalculationLatency
+        expr: histogram_quantile(0.95, rate(bondx_liquidity_pulse_calculation_duration_seconds_bucket[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: performance
+        annotations:
+          summary: "High calculation latency detected"
+          description: "95th percentile calculation latency is {{ $value }} seconds. This may impact real-time performance."
+          runbook_url: "https://bondx.com/runbooks/high-calculation-latency"
+
+      # High error rate alerts
+      - alert: HighCalculationErrorRate
+        expr: rate(bondx_liquidity_pulse_calculation_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: performance
+        annotations:
+          summary: "High calculation error rate detected"
+          description: "Calculation error rate is {{ $value }} errors per second. This indicates system instability."
+          runbook_url: "https://bondx.com/runbooks/high-error-rate"
+
+      # Low forecast accuracy alerts
+      - alert: LowForecastAccuracy
+        expr: bondx_liquidity_pulse_forecast_accuracy < 0.6
+        for: 10m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: forecasting
+        annotations:
+          summary: "Low forecast accuracy detected for {{ $labels.isin }}"
+          description: "Forecast accuracy is {{ $value }} for ISIN {{ $labels.isin }}. This may indicate model degradation."
+          runbook_url: "https://bondx.com/runbooks/low-forecast-accuracy"
+
+  - name: liquidity_pulse_signals
+    rules:
+      # Stale signal alerts
+      - alert: StaleSignals
+        expr: bondx_liquidity_pulse_signal_freshness_seconds > 300
+        for: 2m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: signal-processing
+        annotations:
+          summary: "Stale signals detected for {{ $labels.isin }}"
+          description: "Signal freshness is {{ $value }} seconds for ISIN {{ $labels.isin }}. Data may be outdated."
+          runbook_url: "https://bondx.com/runbooks/stale-signals"
+
+      # Low signal coverage alerts
+      - alert: LowSignalCoverage
+        expr: bondx_liquidity_pulse_signal_coverage < 0.7
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: signal-processing
+        annotations:
+          summary: "Low signal coverage detected for {{ $labels.isin }}"
+          description: "Signal coverage is {{ $value }} for ISIN {{ $labels.isin }}. This may impact score reliability."
+          runbook_url: "https://bondx.com/runbooks/low-signal-coverage"
+
+      # Missing critical signals
+      - alert: MissingCriticalSignals
+        expr: bondx_liquidity_pulse_missing_signals_count > 2
+        for: 3m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: signal-processing
+        annotations:
+          summary: "Missing critical signals detected for {{ $labels.isin }}"
+          description: "{{ $value }} critical signals are missing for ISIN {{ $labels.isin }}. This may impact score accuracy."
+          runbook_url: "https://bondx.com/runbooks/missing-signals"
+
+  - name: liquidity_pulse_websocket
+    rules:
+      # WebSocket connection issues
+      - alert: HighWebSocketDisconnections
+        expr: rate(bondx_liquidity_pulse_websocket_disconnections_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: websocket
+        annotations:
+          summary: "High WebSocket disconnection rate detected"
+          description: "WebSocket disconnection rate is {{ $value }} per second. This may indicate connection instability."
+          runbook_url: "https://bondx.com/runbooks/websocket-disconnections"
+
+      # Low WebSocket message rate
+      - alert: LowWebSocketMessageRate
+        expr: rate(bondx_liquidity_pulse_messages_total[5m]) < 1
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: websocket
+        annotations:
+          summary: "Low WebSocket message rate detected"
+          description: "WebSocket message rate is {{ $value }} messages per second. This may indicate system inactivity."
+          runbook_url: "https://bondx.com/runbooks/low-message-rate"
+
+      # WebSocket connection limit approaching
+      - alert: WebSocketConnectionLimit
+        expr: bondx_liquidity_pulse_websocket_connections_total > 950
+        for: 1m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: websocket
+        annotations:
+          summary: "WebSocket connection limit approaching"
+          description: "WebSocket connections are at {{ $value }}/1000. Consider scaling up if this trend continues."
+          runbook_url: "https://bondx.com/runbooks/websocket-scaling"
+
+  - name: liquidity_pulse_system
+    rules:
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }}. This may impact system performance."
+          runbook_url: "https://bondx.com/runbooks/high-memory-usage"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%. This may impact system responsiveness."
+          runbook_url: "https://bondx.com/runbooks/high-cpu-usage"
+
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value | humanizePercentage }}. This may impact data storage."
+          runbook_url: "https://bondx.com/runbooks/high-disk-usage"
+
+  - name: liquidity_pulse_business
+    rules:
+      # Sector-wide liquidity deterioration
+      - alert: SectorLiquidityDeterioration
+        expr: avg by(sector) (bondx_liquidity_pulse_liquidity_index) < 40
+        for: 10m
+        labels:
+          severity: critical
+          service: liquidity-pulse
+          component: business
+        annotations:
+          summary: "Sector-wide liquidity deterioration detected for {{ $labels.sector }}"
+          description: "Average liquidity index for {{ $labels.sector }} sector is {{ $value }}. This indicates sector-wide issues."
+          runbook_url: "https://bondx.com/runbooks/sector-liquidity-deterioration"
+
+      # Rating-wide risk increase
+      - alert: RatingRiskIncrease
+        expr: avg by(rating) (bondx_liquidity_pulse_bondx_score) < 45
+        for: 10m
+        labels:
+          severity: critical
+          service: liquidity-pulse
+          component: business
+        annotations:
+          summary: "Rating-wide risk increase detected for {{ $labels.rating }}"
+          description: "Average BondX score for {{ $labels.rating }} rating is {{ $value }}. This indicates rating-wide risk increase."
+          runbook_url: "https://bondx.com/runbooks/rating-risk-increase"
+
+      # Model drift detection
+      - alert: ModelDriftDetected
+        expr: abs(rate(bondx_liquidity_pulse_forecast_errors_total[1h])) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+          service: liquidity-pulse
+          component: forecasting
+        annotations:
+          summary: "Model drift detected"
+          description: "Forecast error rate is {{ $value }}. This may indicate model drift and require retraining."
+          runbook_url: "https://bondx.com/runbooks/model-drift"
+
+# Alert inhibition rules
+inhibit_rules:
+  # Inhibit lower severity alerts when higher severity alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'component']
+  
+  # Inhibit component-specific alerts when service-wide alerts are firing
+  - source_match:
+      severity: 'critical'
+      component: 'system'
+    target_match:
+      severity: 'warning'
+    equal: ['service']

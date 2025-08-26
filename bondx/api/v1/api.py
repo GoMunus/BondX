@@ -17,6 +17,7 @@ from .monitoring import router as monitoring_router
 from .auctions import router as auctions_router
 from .trading import router as trading_router
 from .risk_management import router as risk_management_router
+from .websocket import router as websocket_router
 
 # Create main API router
 api_router = APIRouter()
@@ -86,6 +87,12 @@ api_router.include_router(
     risk_management_router,
     prefix="/risk",
     tags=["risk_management"]
+)
+
+# Include WebSocket router
+api_router.include_router(
+    websocket_router,
+    tags=["websocket"]
 )
 
 # Export the main router

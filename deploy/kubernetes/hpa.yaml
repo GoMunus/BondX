@@ -1,0 +1,100 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bondx-backend-hpa
+  namespace: bondx
+  labels:
+    app: bondx-backend
+    environment: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bondx-backend
+  
+  # Min and max replicas
+  minReplicas: 3
+  maxReplicas: 10
+  
+  # Metrics for scaling
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  
+  # Custom metrics for business KPIs
+  - type: Object
+    object:
+      metric:
+        name: requests_per_second
+      describedObject:
+        apiVersion: v1
+        kind: Service
+        name: bondx-backend-service
+      target:
+        type: AverageValue
+        averageValue: 1000
+  
+  # Custom metrics for WebSocket connections
+  - type: Object
+    object:
+      metric:
+        name: websocket_connections
+      describedObject:
+        apiVersion: v1
+        kind: Service
+        name: bondx-backend-service
+      target:
+        type: AverageValue
+        averageValue: 500
+  
+  # Custom metrics for order volume
+  - type: Object
+    object:
+      metric:
+        name: orders_per_second
+      describedObject:
+        apiVersion: v1
+        kind: Service
+        name: bondx-backend-service
+      target:
+        type: AverageValue
+        averageValue: 100
+  
+  # Behavior configuration
+  behavior:
+    # Scale down behavior
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Min
+    
+    # Scale up behavior
+    scaleUp:
+      stabilizationWindowSeconds: 60   # 1 minute
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max

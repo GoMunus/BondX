@@ -1,0 +1,213 @@
+# Policy Drift Detection Configuration
+# This file defines thresholds and settings for detecting quality policy drift
+
+# Drift detection thresholds
+thresholds:
+  # Rate change thresholds (as percentages)
+  fail_rate_drop_threshold: 0.15      # 15% drop in FAIL rate triggers alert
+  warn_rate_drop_threshold: 0.20      # 20% drop in WARN rate triggers alert
+  coverage_increase_threshold: 0.10   # 10% increase in coverage triggers alert
+  esg_completeness_increase_threshold: 0.15  # 15% increase in ESG completeness
+  liquidity_improvement_threshold: 0.20      # 20% improvement in liquidity
+  
+  # Analysis settings
+  moving_average_window: 30           # Days for moving average calculation
+  minimum_data_points: 7              # Minimum data points required for analysis
+  confidence_level: 0.95              # Confidence level for drift detection
+  
+  # Alert thresholds
+  high_severity_threshold: 0.30       # 30% change = high severity
+  medium_severity_threshold: 0.15     # 15% change = medium severity
+
+# Environment-specific overrides
+environments:
+  development:
+    fail_rate_drop_threshold: 0.25    # More lenient in development
+    warn_rate_drop_threshold: 0.30
+    moving_average_window: 14         # Shorter window for faster feedback
+  
+  testing:
+    fail_rate_drop_threshold: 0.20
+    warn_rate_drop_threshold: 0.25
+    moving_average_window: 21
+  
+  production:
+    fail_rate_drop_threshold: 0.15    # Strict in production
+    warn_rate_drop_threshold: 0.20
+    moving_average_window: 30
+    minimum_data_points: 14           # More data required in production
+
+# Sector-specific thresholds
+sector_thresholds:
+  financials:
+    fail_rate_drop_threshold: 0.10    # Stricter for financial sector
+    esg_completeness_increase_threshold: 0.10
+  
+  utilities:
+    fail_rate_drop_threshold: 0.12
+    coverage_increase_threshold: 0.08
+  
+  technology:
+    fail_rate_drop_threshold: 0.18    # More lenient for tech sector
+    warn_rate_drop_threshold: 0.25
+  
+  healthcare:
+    fail_rate_drop_threshold: 0.13
+    esg_completeness_increase_threshold: 0.12
+  
+  consumer:
+    fail_rate_drop_threshold: 0.16
+    warn_rate_drop_threshold: 0.22
+
+# Quality gate specific thresholds
+gate_thresholds:
+  coverage_gate:
+    increase_threshold: 0.08
+    severity: "medium"
+  
+  esg_gate:
+    increase_threshold: 0.12
+    severity: "high"
+  
+  liquidity_gate:
+    improvement_threshold: 0.18
+    severity: "medium"
+  
+  data_freshness_gate:
+    improvement_threshold: 0.15
+    severity: "low"
+
+# Alert configuration
+alerts:
+  enabled: true
+  notification_channels:
+    - "console"
+    - "log_file"
+    - "email"  # Stub for future implementation
+    - "slack"  # Stub for future implementation
+  
+  # Alert frequency
+  max_alerts_per_day: 5
+  alert_cooldown_hours: 6
+  
+  # Escalation rules
+  escalation:
+    high_severity:
+      immediate: true
+      notify_managers: true
+      create_incident: true
+    
+    medium_severity:
+      immediate: false
+      notify_managers: false
+      create_incident: false
+    
+    low_severity:
+      immediate: false
+      notify_managers: false
+      create_incident: false
+
+# Reporting configuration
+reporting:
+  # Output formats
+  formats:
+    - "json"
+    - "csv"
+    - "html"
+    - "pdf"  # Stub for future implementation
+  
+  # Report retention
+  retention_days: 90
+  max_reports: 1000
+  
+  # Dashboard integration
+  dashboard:
+    enabled: true
+    update_frequency_minutes: 15
+    export_metrics: true
+    export_format: "csv"
+
+# Data quality checks
+data_quality:
+  # Validate input data
+  validate_timestamps: true
+  validate_metric_ranges: true
+  detect_outliers: true
+  
+  # Outlier detection
+  outlier_threshold: 3.0  # Standard deviations
+  min_valid_metrics: 0.8  # 80% of metrics must be valid
+  
+  # Data freshness
+  max_data_age_days: 7
+  stale_data_threshold: 0.1  # 10% stale data allowed
+
+# Performance settings
+performance:
+  # Memory management
+  max_history_size: 10000  # Maximum snapshots to keep in memory
+  batch_size: 100          # Process snapshots in batches
+  
+  # Caching
+  enable_cache: true
+  cache_ttl_hours: 24
+  
+  # Parallel processing
+  max_workers: 4
+  chunk_size: 1000
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # File logging
+  file_logging:
+    enabled: true
+    max_size_mb: 100
+    backup_count: 5
+  
+  # Structured logging
+  structured_logging: true
+  include_metrics: true
+
+# Integration settings
+integrations:
+  # Quality pipeline integration
+  quality_pipeline:
+    auto_snapshot: true
+    snapshot_on_completion: true
+    include_metadata: true
+  
+  # CI/CD integration
+  ci_cd:
+    run_on_pr: true
+    run_on_merge: true
+    block_on_drift: true
+    require_approval: true
+  
+  # Monitoring integration
+  monitoring:
+    prometheus_metrics: true
+    grafana_dashboards: true
+    alertmanager: true
+
+# Compliance and audit
+compliance:
+  # Audit trail
+  audit_trail:
+    enabled: true
+    log_all_changes: true
+    retention_years: 7
+  
+  # Policy version tracking
+  version_tracking:
+    enabled: true
+    require_version_bump: true
+    changelog_required: true
+  
+  # Regulatory reporting
+  regulatory:
+    enabled: false  # Enable for regulated environments
+    report_frequency: "monthly"
+    include_drift_analysis: true

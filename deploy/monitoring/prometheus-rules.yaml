@@ -1,0 +1,258 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: bondx-monitoring
+  labels:
+    app: prometheus
+    environment: production
+data:
+  bondx-alerts.yml: |
+    groups:
+    - name: bondx-business-kpis
+      rules:
+      # Order volume alerts
+      - alert: HighOrderVolume
+        expr: rate(orders_total[5m]) > 1000
+        for: 2m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High order volume detected"
+          description: "Order volume is {{ $value }} orders/sec over 5 minutes"
+          runbook_url: "https://bondx.com/runbooks/high-order-volume"
+      
+      - alert: LowOrderVolume
+        expr: rate(orders_total[5m]) < 10
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "Low order volume detected"
+          description: "Order volume is {{ $value }} orders/sec over 5 minutes"
+          runbook_url: "https://bondx.com/runbooks/low-order-volume"
+      
+      # Fill rate alerts
+      - alert: LowFillRate
+        expr: (rate(fills_total[5m]) / rate(orders_total[5m])) < 0.8
+        for: 10m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Low fill rate detected"
+          description: "Fill rate is {{ $value | humanizePercentage }} over 5 minutes"
+          runbook_url: "https://bondx.com/runbooks/low-fill-rate"
+      
+      # Auction performance alerts
+      - alert: AuctionFailure
+        expr: rate(auction_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Auction failures detected"
+          description: "{{ $value }} auction failures per second over 5 minutes"
+          runbook_url: "https://bondx.com/runbooks/auction-failures"
+      
+      # Risk alerts
+      - alert: HighVaR
+        expr: var_current > 1000000
+        for: 2m
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "High VaR detected"
+          description: "Current VaR is {{ $value | humanize }}"
+          runbook_url: "https://bondx.com/runbooks/high-var"
+      
+      - alert: RiskLimitBreach
+        expr: risk_limit_breaches_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: risk
+        annotations:
+          summary: "Risk limit breach detected"
+          description: "{{ $value }} risk limit breaches"
+          runbook_url: "https://bondx.com/runbooks/risk-limit-breach"
+    
+    - name: bondx-infrastructure
+      rules:
+      # WebSocket connection alerts
+      - alert: HighWebSocketConnections
+        expr: websocket_connections_current > 800
+        for: 2m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High WebSocket connections"
+          description: "{{ $value }} active WebSocket connections"
+          runbook_url: "https://bondx.com/runbooks/high-websocket-connections"
+      
+      - alert: WebSocketConnectionDrop
+        expr: rate(websocket_connections_dropped_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "WebSocket connection drops detected"
+          description: "{{ $value }} WebSocket connections dropped per second"
+          runbook_url: "https://bondx.com/runbooks/websocket-connection-drops"
+      
+      # API performance alerts
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile API latency is {{ $value }}s"
+          runbook_url: "https://bondx.com/runbooks/high-api-latency"
+      
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over 5 minutes"
+          runbook_url: "https://bondx.com/runbooks/high-error-rate"
+      
+      # Database alerts
+      - alert: DatabaseHighLatency
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High database latency detected"
+          description: "95th percentile database query latency is {{ $value }}s"
+          runbook_url: "https://bondx.com/runbooks/high-database-latency"
+      
+      - alert: DatabaseConnectionPoolExhausted
+        expr: database_connection_pool_available < 2
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "Only {{ $value }} database connections available"
+          runbook_url: "https://bondx.com/runbooks/database-connection-pool-exhausted"
+      
+      # Redis alerts
+      - alert: RedisHighLatency
+        expr: histogram_quantile(0.95, rate(redis_operation_duration_seconds_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High Redis latency detected"
+          description: "95th percentile Redis operation latency is {{ $value }}s"
+          runbook_url: "https://bondx.com/runbooks/high-redis-latency"
+      
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://bondx.com/runbooks/high-redis-memory"
+      
+      # Celery worker alerts
+      - alert: CeleryWorkerDown
+        expr: celery_workers_active < 2
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Celery workers down"
+          description: "Only {{ $value }} Celery workers active"
+          runbook_url: "https://bondx.com/runbooks/celery-worker-down"
+      
+      - alert: CeleryQueueBacklog
+        expr: celery_queue_length > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Celery queue backlog detected"
+          description: "Queue length is {{ $value }} tasks"
+          runbook_url: "https://bondx.com/runbooks/celery-queue-backlog"
+    
+    - name: bondx-market-data
+      rules:
+      # Market data freshness alerts
+      - alert: MarketDataStale
+        expr: time() - market_data_last_update_timestamp > 300
+        for: 2m
+        labels:
+          severity: warning
+          category: market-data
+        annotations:
+          summary: "Market data is stale"
+          description: "Market data hasn't been updated for {{ $value }} seconds"
+          runbook_url: "https://bondx.com/runbooks/market-data-stale"
+      
+      - alert: MarketDataIngestionFailure
+        expr: rate(market_data_ingestion_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+          category: market-data
+        annotations:
+          summary: "Market data ingestion failures"
+          description: "{{ $value }} market data ingestion failures per second"
+          runbook_url: "https://bondx.com/runbooks/market-data-ingestion-failures"
+      
+      # External API alerts
+      - alert: NSEAPIDown
+        expr: up{job="nse-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: market-data
+        annotations:
+          summary: "NSE API is down"
+          description: "NSE API endpoint is not responding"
+          runbook_url: "https://bondx.com/runbooks/nse-api-down"
+      
+      - alert: BSEAPIDown
+        expr: up{job="bse-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: market-data
+        annotations:
+          summary: "BSE API is down"
+          description: "BSE API endpoint is not responding"
+          runbook_url: "https://bondx.com/runbooks/bse-api-down"
+      
+      - alert: RBIAPIDown
+        expr: up{job="rbi-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: market-data
+        annotations:
+          summary: "RBI API is down"
+          description: "RBI API endpoint is not responding"
+          runbook_url: "https://bondx.com/runbooks/rbi-api-down"

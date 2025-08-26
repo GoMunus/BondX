@@ -1,0 +1,112 @@
+# BondX Quality Policy Configuration
+# This file defines thresholds and severity mappings for quality gates
+# Includes regulator-friendly modes and sector-adjusted thresholds
+
+thresholds:
+  # Coverage thresholds
+  coverage_min: 90.0  # Minimum coverage percentage
+  
+  # ESG data quality
+  esg_missing_max: 20.0  # Maximum allowed missing ESG data percentage
+  
+  # Liquidity metrics
+  liquidity_index_median_min: 30.0  # Minimum median liquidity index (global)
+  
+  # Sector-adjusted liquidity thresholds (regulator mode)
+  sector_liquidity_thresholds:
+    utilities: 25.0
+    infrastructure: 28.0
+    technology: 35.0
+    finance: 32.0
+    healthcare: 30.0
+    energy: 26.0
+    consumer: 29.0
+    default: 30.0  # Default for unknown sectors
+  
+  # Data integrity thresholds
+  negative_spreads_max_pct: 1.0  # Maximum percentage of negative spreads allowed
+  maturity_anomalies_max_pct: 0.1  # Maximum percentage of maturity anomalies
+  
+  # Freshness thresholds
+  stale_quotes_minutes: 60  # Minutes after which quotes are considered stale
+  
+  # Model performance thresholds (if applicable)
+  forecast_error_max_mae: 0.05  # Maximum Mean Absolute Error for forecasts
+  model_accuracy_min: 0.80  # Minimum model accuracy threshold
+
+severity_mapping:
+  # Coverage-related rules
+  coverage_threshold: "WARN"  # Coverage below threshold is a warning, not a failure
+  
+  # ESG-related rules
+  esg_missing: "WARN"  # Missing ESG data is a warning
+  
+  # Liquidity-related rules
+  liquidity_index_low: "WARN"  # Low liquidity index is a warning
+  
+  # Critical data integrity rules
+  negative_spreads: "FAIL"  # Negative spreads are critical failures
+  maturity_anomalies: "FAIL"  # Maturity anomalies are critical failures
+  duplicate_keys: "FAIL"  # Duplicate primary keys are critical failures
+  empty_sectors: "FAIL"  # Empty sectors are critical failures
+  
+  # Freshness rules
+  stale_quotes: "WARN"  # Stale quotes are warnings
+  
+  # Model performance rules
+  forecast_error_high: "WARN"  # High forecast errors are warnings
+  model_accuracy_low: "WARN"  # Low model accuracy is a warning
+
+# Liquidity gate configuration modes
+liquidity_gate_modes:
+  global_median:  # Simple global threshold
+    enabled: true
+    threshold: 30.0
+  sector_adjusted:  # Regulator-friendly sector-specific thresholds
+    enabled: true
+    fallback_threshold: 30.0  # Fallback if sector not found
+
+# ESG completeness gate dual modes
+esg_completeness_modes:
+  strict:  # Regulator mode - strict ESG requirements
+    enabled: true
+    max_missing_pct: 20.0
+    severity: "FAIL"
+  exploratory:  # Development/analysis mode - lenient ESG requirements
+    enabled: true
+    max_missing_pct: 40.0
+    severity: "WARN"
+
+# Rules to ignore (for specific environments or testing)
+ignore_list:
+  # - "coverage_threshold"  # Uncomment to ignore coverage warnings
+  # - "esg_missing"  # Uncomment to ignore ESG missing warnings
+
+# Environment-specific overrides
+environments:
+  development:
+    coverage_min: 80.0  # Lower coverage requirements for development
+    esg_missing_max: 50.0  # More lenient ESG requirements
+    esg_completeness_mode: "exploratory"  # Use exploratory ESG mode
+    liquidity_gate_mode: "global_median"  # Use simple global threshold
+    
+  testing:
+    coverage_min: 85.0  # Moderate coverage requirements for testing
+    esg_missing_max: 30.0  # Moderate ESG requirements
+    esg_completeness_mode: "exploratory"  # Use exploratory ESG mode
+    liquidity_gate_mode: "sector_adjusted"  # Test sector-adjusted mode
+    
+  production:
+    coverage_min: 95.0  # Strict coverage requirements for production
+    esg_missing_max: 10.0  # Strict ESG requirements
+    negative_spreads_max_pct: 0.1  # Very strict negative spread tolerance
+    esg_completeness_mode: "strict"  # Use strict ESG mode
+    liquidity_gate_mode: "sector_adjusted"  # Use sector-adjusted mode for regulators
+
+# Regulator-specific overrides
+regulator_mode:
+  enabled: false  # Enable for regulator-facing environments
+  strict_esg: true
+  sector_adjusted_liquidity: true
+  enhanced_reporting: true
+  audit_trail: true

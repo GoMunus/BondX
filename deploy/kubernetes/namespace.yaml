@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bondx
+  labels:
+    name: bondx
+    environment: production
+    app: bondx-backend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bondx-monitoring
+  labels:
+    name: bondx-monitoring
+    environment: production
+    app: bondx-monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bondx-ingress
+  labels:
+    name: bondx-ingress
+    environment: production
+    app: bondx-ingress

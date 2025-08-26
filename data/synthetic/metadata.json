@@ -1,0 +1,45 @@
+{
+  "generation_timestamp": "2024-12-19T10:00:00",
+  "random_seed": 42,
+  "total_bonds": 30,
+  "total_companies": 30,
+  "sectors": ["Technology", "Finance", "Energy", "Industrial", "Consumer Goods", "Healthcare"],
+  "rating_distribution": {
+    "AAA": 1,
+    "AA+": 3,
+    "AA": 4,
+    "AA-": 1,
+    "A+": 1,
+    "A": 6,
+    "A-": 2,
+    "BBB+": 3,
+    "BBB": 4,
+    "BB+": 1,
+    "BB": 1,
+    "BB-": 0
+  },
+  "sector_distribution": {
+    "Technology": 5,
+    "Finance": 5,
+    "Energy": 5,
+    "Industrial": 5,
+    "Consumer Goods": 5,
+    "Healthcare": 5
+  },
+  "maturity_distribution": {
+    "short_term_1_5_years": 2,
+    "medium_term_5_15_years": 20,
+    "long_term_15_30_years": 8
+  },
+  "liquidity_distribution": {
+    "high_80_100": 8,
+    "medium_40_80": 18,
+    "low_0_40": 4
+  },
+  "esg_distribution": {
+    "excellent_80_100": 4,
+    "good_60_80": 20,
+    "fair_40_60": 6,
+    "poor_0_40": 0
+  }
+}

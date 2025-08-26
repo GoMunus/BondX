@@ -1,0 +1,344 @@
+version: '3.8'
+
+services:
+  # BondX AI Core Services
+  bondx-ai:
+    build: .
+    container_name: bondx-ai-core
+    restart: unless-stopped
+    ports:
+      - "8000:8000"  # FastAPI
+      - "8001:8001"  # Dashboard
+      - "8002:8002"  # Training API
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - MONITORING_ENABLED=true
+      - ALERTING_ENABLED=true
+      - PROMETHEUS_ENABLED=true
+      - GRAFANA_ENABLED=true
+    volumes:
+      - ./autonomous_training_output:/app/autonomous_training_output
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # BondX AI Autonomous Trainer
+  bondx-trainer:
+    build: .
+    container_name: bondx-ai-trainer
+    restart: unless-stopped
+    command: ["python", "bondx_ai_autonomous_trainer.py"]
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - CONFIG_PATH=autonomous_trainer_config.yaml
+      - MAX_EPOCHS=500
+      - CONVERGENCE_TIMEOUT_HOURS=6
+    volumes:
+      - ./autonomous_training_output:/app/autonomous_training_output
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./autonomous_trainer_config.yaml:/app/autonomous_trainer_config.yaml
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "bondx_ai_autonomous_trainer.py"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # BondX AI Dashboard
+  bondx-dashboard:
+    build: .
+    container_name: bondx-ai-dashboard
+    restart: unless-stopped
+    command: ["python", "bondx_ai_dashboard.py"]
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - OUTPUT_DIR=autonomous_training_output
+      - UPDATE_INTERVAL=5
+    volumes:
+      - ./autonomous_training_output:/app/autonomous_training_output
+      - ./logs:/app/logs
+    depends_on:
+      - bondx-ai
+    networks:
+      - bondx-network
+
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bondx-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=bondx_ai
+      - POSTGRES_USER=bondx_user
+      - POSTGRES_PASSWORD=bondx_secure_password_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bondx_user -d bondx_ai"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bondx-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass bondx_redis_password_2024
+    volumes:
+      - redis_data:/data
+      - ./deploy/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: bondx-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: bondx-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=bondx_grafana_password_2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana-dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./deploy/monitoring/grafana-datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./deploy/monitoring/grafana-dashboard-liquidity-pulse.json:/var/lib/grafana/dashboards/liquidity-pulse.json
+      - ./deploy/monitoring/grafana-dashboard-trading.json:/var/lib/grafana/dashboards/trading.json
+    depends_on:
+      - prometheus
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Alert Manager
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: bondx-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./deploy/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Node Exporter (System Metrics)
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: bondx-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: bondx-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./deploy/nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - bondx-ai
+      - bondx-dashboard
+      - grafana
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # HAProxy Load Balancer
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: bondx-haproxy
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # HAProxy stats
+      - "8081:8081"  # Load balanced BondX AI
+    volumes:
+      - ./deploy/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - bondx-ai
+      - bondx-dashboard
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch (for advanced logging)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: bondx-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kibana (for log visualization)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: bondx-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - bondx-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Filebeat (for log collection)
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: bondx-filebeat
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./deploy/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/var/log/bondx:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - elasticsearch
+    networks:
+      - bondx-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+networks:
+  bondx-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

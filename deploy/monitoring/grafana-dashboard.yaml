@@ -1,0 +1,294 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: bondx-monitoring
+  labels:
+    app: grafana
+    environment: production
+data:
+  bondx-business-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "BondX Business KPIs",
+        "tags": ["bondx", "business", "kpis"],
+        "style": "dark",
+        "timezone": "Asia/Kolkata",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Order Volume",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(orders_total[5m])",
+                "legendFormat": "Orders/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Fill Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "(rate(fills_total[5m]) / rate(orders_total[5m])) * 100",
+                "legendFormat": "Fill Rate %"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Auction Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(auction_success_total[5m])",
+                "legendFormat": "Successful Auctions/sec"
+              },
+              {
+                "expr": "rate(auction_failures_total[5m])",
+                "legendFormat": "Failed Auctions/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Risk Metrics",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "var_current",
+                "legendFormat": "Current VaR"
+              },
+              {
+                "expr": "risk_limit_breaches_total",
+                "legendFormat": "Risk Limit Breaches"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          },
+          {
+            "id": 5,
+            "title": "Trading Volume by Instrument",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "topk(10, sum by (isin) (rate(trades_total[5m])))",
+                "legendFormat": "{{isin}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+  
+  bondx-infrastructure-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "BondX Infrastructure",
+        "tags": ["bondx", "infrastructure", "monitoring"],
+        "style": "dark",
+        "timezone": "Asia/Kolkata",
+        "panels": [
+          {
+            "id": 1,
+            "title": "WebSocket Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "websocket_connections_current",
+                "legendFormat": "Active Connections"
+              },
+              {
+                "expr": "rate(websocket_connections_dropped_total[5m])",
+                "legendFormat": "Dropped Connections/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "API Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th Percentile Latency"
+              },
+              {
+                "expr": "rate(http_requests_total[5m])",
+                "legendFormat": "Requests/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Database Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th Percentile Query Time"
+              },
+              {
+                "expr": "database_connection_pool_available",
+                "legendFormat": "Available Connections"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Redis Performance",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(redis_operation_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th Percentile Redis Latency"
+              },
+              {
+                "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100",
+                "legendFormat": "Memory Usage %"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          },
+          {
+            "id": 5,
+            "title": "Celery Workers",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "celery_workers_active",
+                "legendFormat": "Active Workers"
+              }
+            ],
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16}
+          },
+          {
+            "id": 6,
+            "title": "Queue Length",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "celery_queue_length",
+                "legendFormat": "Queue Length"
+              }
+            ],
+            "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16}
+          },
+          {
+            "id": 7,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m]) * 100",
+                "legendFormat": "Error Rate %"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+  
+  bondx-market-data-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "BondX Market Data",
+        "tags": ["bondx", "market-data", "external-apis"],
+        "style": "dark",
+        "timezone": "Asia/Kolkata",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Market Data Freshness",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "time() - market_data_last_update_timestamp",
+                "legendFormat": "Seconds Since Last Update"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Data Ingestion Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(market_data_points_total[5m])",
+                "legendFormat": "Data Points/sec"
+              },
+              {
+                "expr": "rate(market_data_ingestion_failures_total[5m])",
+                "legendFormat": "Ingestion Failures/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "External API Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"nse-api\"}",
+                "legendFormat": "NSE API"
+              },
+              {
+                "expr": "up{job=\"bse-api\"}",
+                "legendFormat": "BSE API"
+              },
+              {
+                "expr": "up{job=\"rbi-api\"}",
+                "legendFormat": "RBI API"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Data Quality Metrics",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(data_validation_failures_total[5m])",
+                "legendFormat": "Validation Failures/sec"
+              },
+              {
+                "expr": "rate(outlier_detections_total[5m])",
+                "legendFormat": "Outliers Detected/sec"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }

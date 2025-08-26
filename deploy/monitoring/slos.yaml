@@ -1,0 +1,373 @@
+# BondX Service Level Objectives (SLOs)
+# Production SLOs with burn-rate alerts and error budgets
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: bondx-slos
+  namespace: bondx-monitoring
+  labels:
+    app: bondx
+    component: monitoring
+    type: slo
+spec:
+  groups:
+    - name: bondx.trading.slos
+      rules:
+        # Trading SLOs
+        - alert: TradingOrderAcceptToMatchLatencySLO
+          expr: |
+            histogram_quantile(0.95, 
+              rate(order_accept_to_match_duration_seconds_bucket[5m])
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            slo: trading
+            metric: order_accept_to_match_latency
+          annotations:
+            summary: "Trading order accept to match latency SLO violated"
+            description: "95th percentile order accept to match latency is {{ $value }}s, exceeding 50ms target"
+            runbook_url: "https://bondx.com/runbooks/trading-slo-violation"
+            
+        - alert: TradingOrderAcceptToMatchLatencySLOBurn
+          expr: |
+            (
+              histogram_quantile(0.95, 
+                rate(order_accept_to_match_duration_seconds_bucket[5m])
+              ) > 0.05
+            ) and on() (
+              increase(order_accept_to_match_duration_seconds_count[1h]) > 0
+            )
+          for: 1m
+          labels:
+            severity: critical
+            slo: trading
+            metric: order_accept_to_match_latency
+            burn_rate: "fast"
+          annotations:
+            summary: "Trading order accept to match latency SLO burn rate exceeded"
+            description: "Fast burn rate detected for order accept to match latency SLO"
+            runbook_url: "https://bondx.com/runbooks/trading-slo-burn-rate"
+            
+        - alert: TradingExecutionSuccessRateSLO
+          expr: |
+            rate(trade_execution_success_total[5m]) / 
+            rate(trade_execution_total[5m]) < 0.999
+          for: 5m
+          labels:
+            severity: warning
+            slo: trading
+            metric: execution_success_rate
+          annotations:
+            summary: "Trading execution success rate SLO violated"
+            description: "Trade execution success rate is {{ $value | humanizePercentage }}, below 99.9% target"
+            runbook_url: "https://bondx.com/runbooks/trading-slo-violation"
+            
+        - alert: TradingExecutionSuccessRateSLOBurn
+          expr: |
+            (
+              rate(trade_execution_success_total[5m]) / 
+              rate(trade_execution_total[5m]) < 0.999
+            ) and on() (
+              increase(trade_execution_total[1h]) > 100
+            )
+          for: 1m
+          labels:
+            severity: critical
+            slo: trading
+            metric: execution_success_rate
+            burn_rate: "fast"
+          annotations:
+            summary: "Trading execution success rate SLO burn rate exceeded"
+            description: "Fast burn rate detected for execution success rate SLO"
+            runbook_url: "https://bondx.com/runbooks/trading-slo-burn-rate"
+
+    - name: bondx.websocket.slos
+      rules:
+        # WebSocket SLOs
+        - alert: WebSocketMessageDeliveryLatencySLO
+          expr: |
+            histogram_quantile(0.95, 
+              rate(websocket_message_delivery_duration_seconds_bucket[5m])
+            ) > 0.15
+          for: 5m
+          labels:
+            severity: warning
+            slo: websocket
+            metric: message_delivery_latency
+          annotations:
+            summary: "WebSocket message delivery latency SLO violated"
+            description: "95th percentile message delivery latency is {{ $value }}s, exceeding 150ms target"
+            runbook_url: "https://bondx.com/runbooks/websocket-slo-violation"
+            
+        - alert: WebSocketMessageDeliveryLatencySLOBurn
+          expr: |
+            (
+              histogram_quantile(0.95, 
+                rate(websocket_message_delivery_duration_seconds_bucket[5m])
+              ) > 0.15
+            ) and on() (
+              increase(websocket_message_delivery_duration_seconds_count[1h]) > 0
+            )
+          for: 1m
+          labels:
+            severity: critical
+            slo: websocket
+            metric: message_delivery_latency
+            burn_rate: "fast"
+          annotations:
+            summary: "WebSocket message delivery latency SLO burn rate exceeded"
+            description: "Fast burn rate detected for message delivery latency SLO"
+            runbook_url: "https://bondx.com/runbooks/websocket-slo-burn-rate"
+            
+        - alert: WebSocketReconnectionSuccessRateSLO
+          expr: |
+            rate(websocket_reconnection_success_total[5m]) / 
+            rate(websocket_reconnection_total[5m]) < 0.999
+          for: 5m
+          labels:
+            severity: warning
+            slo: websocket
+            metric: reconnection_success_rate
+          annotations:
+            summary: "WebSocket reconnection success rate SLO violated"
+            description: "Reconnection success rate is {{ $value | humanizePercentage }}, below 99.9% target"
+            runbook_url: "https://bondx.com/runbooks/websocket-slo-violation"
+            
+        - alert: WebSocketDroppedMessagesSLO
+          expr: |
+            rate(websocket_dropped_messages_total[5m]) / 
+            rate(websocket_messages_total[5m]) > 0.0005
+          for: 5m
+          labels:
+            severity: warning
+            slo: websocket
+            metric: dropped_messages_rate
+          annotations:
+            summary: "WebSocket dropped messages rate SLO violated"
+            description: "Dropped messages rate is {{ $value | humanizePercentage }}, exceeding 0.05% target"
+            runbook_url: "https://bondx.com/runbooks/websocket-slo-violation"
+
+    - name: bondx.risk.slos
+      rules:
+        # Risk SLOs
+        - alert: RiskSnapshotFreshnessSLO
+          expr: |
+            time() - risk_snapshot_timestamp_seconds > 1
+          for: 5m
+          labels:
+            severity: warning
+            slo: risk
+            metric: snapshot_freshness
+          annotations:
+            summary: "Risk snapshot freshness SLO violated"
+            description: "Risk snapshot is {{ $value }}s old, exceeding 1s target"
+            runbook_url: "https://bondx.com/runbooks/risk-slo-violation"
+            
+        - alert: RiskSnapshotFreshnessSLOBurn
+          expr: |
+            (
+              time() - risk_snapshot_timestamp_seconds > 1
+            ) and on() (
+              increase(risk_snapshot_generation_total[1h]) > 0
+            )
+          for: 1m
+          labels:
+            severity: critical
+            slo: risk
+            metric: snapshot_freshness
+            burn_rate: "fast"
+          annotations:
+            summary: "Risk snapshot freshness SLO burn rate exceeded"
+            description: "Fast burn rate detected for snapshot freshness SLO"
+            runbook_url: "https://bondx.com/runbooks/risk-slo-burn-rate"
+            
+        - alert: RiskVaRCompletionTimeSLO
+          expr: |
+            time() - risk_var_completion_timestamp_seconds > 21600
+          for: 5m
+          labels:
+            severity: warning
+            slo: risk
+            metric: var_completion_time
+          annotations:
+            summary: "Risk VaR completion time SLO violated"
+            description: "VaR completion is {{ $value }}s overdue, should complete by 06:00"
+            runbook_url: "https://bondx.com/runbooks/risk-slo-violation"
+            
+        - alert: RiskVaRSuccessRateSLO
+          expr: |
+            rate(risk_var_success_total[24h]) / 
+            rate(risk_var_total[24h]) < 0.995
+          for: 1h
+          labels:
+            severity: warning
+            slo: risk
+            metric: var_success_rate
+          annotations:
+            summary: "Risk VaR success rate SLO violated"
+            description: "24h VaR success rate is {{ $value | humanizePercentage }}, below 99.5% target"
+            runbook_url: "https://bondx.com/runbooks/risk-slo-violation"
+
+    - name: bondx.compliance.slos
+      rules:
+        # Compliance SLOs
+        - alert: ComplianceReportGenerationSLO
+          expr: |
+            rate(compliance_report_generation_success_total[24h]) / 
+            rate(compliance_report_generation_total[24h]) < 0.999
+          for: 1h
+          labels:
+            severity: warning
+            slo: compliance
+            metric: report_generation_success_rate
+          annotations:
+            summary: "Compliance report generation success rate SLO violated"
+            description: "24h report generation success rate is {{ $value | humanizePercentage }}, below 99.9% target"
+            runbook_url: "https://bondx.com/runbooks/compliance-slo-violation"
+            
+        - alert: ComplianceAlertLatencySLO
+          expr: |
+            histogram_quantile(0.95, 
+              rate(compliance_alert_latency_seconds_bucket[5m])
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+            slo: compliance
+            metric: alert_latency
+          annotations:
+            summary: "Compliance alert latency SLO violated"
+            description: "95th percentile alert latency is {{ $value }}s, exceeding 1s target"
+            runbook_url: "https://bondx.com/runbooks/compliance-slo-violation"
+            
+        - alert: ComplianceDataCompletenessSLO
+          expr: |
+            rate(compliance_data_completeness_score[5m]) < 1
+          for: 5m
+          labels:
+            severity: warning
+            slo: compliance
+            metric: data_completeness
+          annotations:
+            summary: "Compliance data completeness SLO violated"
+            description: "Data completeness score is {{ $value }}, below 100% target"
+            runbook_url: "https://bondx.com/runbooks/compliance-slo-violation"
+
+    - name: bondx.infrastructure.slos
+      rules:
+        # Infrastructure SLOs
+        - alert: DatabaseReplicaLagSLO
+          expr: |
+            database_replica_lag_seconds > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            slo: infrastructure
+            metric: database_replica_lag
+          annotations:
+            summary: "Database replica lag SLO violated"
+            description: "Database replica lag is {{ $value }}s, exceeding 100ms target"
+            runbook_url: "https://bondx.com/runbooks/infrastructure-slo-violation"
+            
+        - alert: RedisClusterHealthSLO
+          expr: |
+            redis_cluster_healthy == 0
+          for: 1m
+          labels:
+            severity: critical
+            slo: infrastructure
+            metric: redis_cluster_health
+          annotations:
+            summary: "Redis cluster health SLO violated"
+            description: "Redis cluster is unhealthy"
+            runbook_url: "https://bondx.com/runbooks/infrastructure-slo-violation"
+            
+        - alert: LoadBalancerHealthSLO
+          expr: |
+            load_balancer_healthy_backends / load_balancer_total_backends < 0.9
+          for: 2m
+          labels:
+            severity: warning
+            slo: infrastructure
+            metric: load_balancer_health
+          annotations:
+            summary: "Load balancer health SLO violated"
+            description: "Only {{ $value | humanizePercentage }} of backends are healthy"
+            runbook_url: "https://bondx.com/runbooks/infrastructure-slo-violation"
+
+    - name: bondx.error.budgets
+      rules:
+        # Error Budget Alerts
+        - alert: TradingErrorBudgetExhausted
+          expr: |
+            (
+              1 - (
+                rate(trade_execution_success_total[24h]) / 
+                rate(trade_execution_total[24h])
+              )
+            ) * 86400 > 8.64
+          for: 1h
+          labels:
+            severity: critical
+            slo: trading
+            type: error_budget
+          annotations:
+            summary: "Trading error budget exhausted"
+            description: "Trading error budget has been exhausted ({{ $value }}s over 24h)"
+            runbook_url: "https://bondx.com/runbooks/error-budget-exhausted"
+            
+        - alert: RiskErrorBudgetExhausted
+          expr: |
+            (
+              1 - (
+                rate(risk_calculation_success_total[24h]) / 
+                rate(risk_calculation_total[24h])
+              )
+            ) * 86400 > 43.2
+          for: 1h
+          labels:
+            severity: critical
+            slo: risk
+            type: error_budget
+          annotations:
+            summary: "Risk error budget exhausted"
+            description: "Risk error budget has been exhausted ({{ $value }}s over 24h)"
+            runbook_url: "https://bondx.com/runbooks/error-budget-exhausted"
+            
+        - alert: ComplianceErrorBudgetExhausted
+          expr: |
+            (
+              1 - (
+                rate(compliance_report_generation_success_total[24h]) / 
+                rate(compliance_report_generation_total[24h])
+              )
+            ) * 86400 > 0.864
+          for: 1h
+          labels:
+            severity: critical
+            slo: compliance
+            type: error_budget
+          annotations:
+            summary: "Compliance error budget exhausted"
+            description: "Compliance error budget has been exhausted ({{ $value }}s over 24h)"
+            runbook_url: "https://bondx.com/runbooks/error-budget-exhausted"
+            
+        - alert: InfrastructureErrorBudgetExhausted
+          expr: |
+            (
+              1 - (
+                rate(infrastructure_health_check_success_total[24h]) / 
+                rate(infrastructure_health_check_total[24h])
+              )
+            ) * 86400 > 8.64
+          for: 1h
+          labels:
+            severity: critical
+            slo: infrastructure
+            type: error_budget
+          annotations:
+            summary: "Infrastructure error budget exhausted"
+            description: "Infrastructure error budget has been exhausted ({{ $value }}s over 24h)"
+            runbook_url: "https://bondx.com/runbooks/error-budget-exhausted"

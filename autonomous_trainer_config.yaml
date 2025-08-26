@@ -1,0 +1,129 @@
+# BondX AI Autonomous Trainer Configuration
+# This file configures the autonomous training system parameters
+
+# Random seed for reproducibility
+random_seed: 42
+
+# Training parameters - Enhanced for long sessions (4-6 hours)
+max_epochs: 500  # Increased for longer training sessions
+convergence_threshold: 0.0001  # More stringent convergence
+quality_threshold: 0.98  # Higher quality requirements
+anomaly_threshold: 0.03  # Lower anomaly tolerance
+improvement_patience: 25  # Increased patience for convergence
+
+# Dataset parameters - Expanded diversity
+dataset_size: 1000  # Scaled from 150 to 1000
+training_split: 0.75
+validation_split: 0.15
+test_split: 0.10
+
+# Model training parameters
+model_types:
+  spread_model: "xgboost"
+  downgrade_model: "random_forest"
+  liquidity_shock_model: "gradient_boosting"
+  anomaly_detector: "isolation_forest"
+
+# Quality gate thresholds - Enhanced for enterprise
+quality_gates:
+  coverage_min: 95.0  # Increased coverage requirement
+  esg_missing_max: 15.0  # Reduced missing ESG data
+  liquidity_index_median_min: 35.0  # Higher liquidity requirements
+  negative_spreads_max_pct: 0.5  # Reduced negative spreads
+  maturity_anomalies_max_pct: 0.05  # Reduced maturity anomalies
+  stale_quotes_minutes: 30  # Reduced stale quote tolerance
+
+# Convergence criteria - Enhanced for long sessions
+convergence:
+  min_epochs: 50  # Increased minimum epochs
+  max_epochs_without_improvement: 30  # Increased patience
+  quality_stability_threshold: 0.005  # More stable quality
+  model_improvement_threshold: 0.0005  # More stringent improvement
+  convergence_timeout_hours: 6  # Maximum training time
+
+# Reporting and monitoring - Enhanced for enterprise
+reporting:
+  epoch_report_interval: 1
+  dashboard_update_interval: 1
+  final_report_generation: true
+  evidence_pack_generation: true
+  compliance_report_generation: true
+  feature_importance_tracking: true
+
+# Output configuration
+output:
+  base_directory: "autonomous_training_output"
+  save_intermediate_results: true
+  export_formats: ["csv", "jsonl", "json", "parquet"]
+  model_artifacts: true
+  dataset_iterations: true
+  compliance_packs: true
+
+# Logging configuration - Enhanced for production
+logging:
+  level: "INFO"
+  file_logging: true
+  console_logging: true
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_rotation: true
+  max_log_size_mb: 100
+  backup_count: 5
+
+# Performance monitoring - Enhanced for production
+monitoring:
+  enable_prometheus_metrics: true
+  enable_grafana_dashboard: true
+  enable_slack_alerts: true
+  enable_email_alerts: true
+  metrics_export_interval: 5
+  performance_tracking: true
+  alert_thresholds:
+    accuracy_drop: 0.88  # Alert if accuracy drops below 88%
+    quality_score_drop: 0.90
+    convergence_stall_hours: 2
+
+# Advanced training options - Enhanced for enterprise
+advanced:
+  enable_early_stopping: false  # Disabled for long sessions
+  enable_model_checkpointing: true
+  enable_hyperparameter_tuning: true
+  enable_ensemble_methods: true
+  enable_feature_selection: true
+  enable_stress_testing: true
+  enable_scenario_simulation: true
+
+# Ensemble modeling configuration
+ensemble:
+  enable_stacking: true
+  enable_blending: true
+  base_models: ["spread_model", "downgrade_model", "liquidity_shock_model"]
+  meta_learner: "gradient_boosting"
+  cross_validation_folds: 5
+
+# Stress testing configuration
+stress_testing:
+  enable_global_liquidity_freeze: true
+  enable_downgrade_cascade: true
+  enable_interest_rate_shocks: true
+  enable_inflation_scenarios: true
+  enable_fx_risk_scenarios: true
+  scenario_count: 10
+  stress_test_interval_epochs: 10
+
+# Multi-agent autonomous training
+multi_agent:
+  enable_dataset_agent: true
+  enable_validator_agent: true
+  enable_training_agent: true
+  enable_compliance_agent: true
+  agent_interaction_queue: true
+  agent_escalation_threshold: 0.95
+
+# Enterprise deployment configuration
+enterprise:
+  enable_docker: true
+  enable_kubernetes: true
+  enable_rest_api: true
+  enable_websocket: true
+  enable_health_checks: true
+  enable_circuit_breakers: true

@@ -1,0 +1,174 @@
+# Prometheus Configuration for BondX Liquidity Pulse
+# This file configures Prometheus to scrape metrics from the Liquidity Pulse service
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "prometheus-rules.yaml"
+
+scrape_configs:
+  # Liquidity Pulse Service
+  - job_name: 'bondx-liquidity-pulse'
+    static_configs:
+      - targets: ['liquidity-pulse-service:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    
+    # Relabeling rules for better metric organization
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(?::\d+)?'
+        replacement: '${1}'
+      
+      - source_labels: [__address__]
+        target_label: service
+        regex: '([^:]+)'
+        replacement: 'liquidity-pulse'
+      
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'production'
+
+  # BondX API Service (for general metrics)
+  - job_name: 'bondx-api'
+    static_configs:
+      - targets: ['bondx-api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'bondx-api'
+      
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'production'
+
+  # Redis (for cache performance metrics)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'redis'
+      
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'production'
+
+  # Node Exporter (for system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'node-exporter'
+      
+      - source_labels: [__address__]
+        target_label: environment
+        replacement: 'production'
+
+# Alerting rules configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Recording rules for derived metrics
+recording_rules:
+  - record: bondx_liquidity_pulse_avg_score
+    expr: avg(bondx_liquidity_pulse_bondx_score) by (sector, rating)
+  
+  - record: bondx_liquidity_pulse_avg_liquidity
+    expr: avg(bondx_liquidity_pulse_liquidity_index) by (sector, rating)
+  
+  - record: bondx_liquidity_pulse_avg_repayment
+    expr: avg(bondx_liquidity_pulse_repayment_support) by (sector, rating)
+  
+  - record: bondx_liquidity_pulse_forecast_error_rate
+    expr: rate(bondx_liquidity_pulse_forecast_errors_total[5m])
+  
+  - record: bondx_liquidity_pulse_signal_freshness_avg
+    expr: avg(bondx_liquidity_pulse_signal_freshness_seconds) by (signal_type)
+  
+  - record: bondx_liquidity_pulse_calculation_latency_p95
+    expr: histogram_quantile(0.95, rate(bondx_liquidity_pulse_calculation_duration_seconds_bucket[5m]))
+  
+  - record: bondx_liquidity_pulse_websocket_message_rate
+    expr: rate(bondx_liquidity_pulse_messages_total[5m])
+  
+  - record: bondx_liquidity_pulse_active_connections
+    expr: bondx_liquidity_pulse_websocket_connections_total - bondx_liquidity_pulse_websocket_disconnections_total
+
+# Metric relabeling for better organization
+metric_relabel_configs:
+  # Add service labels to all metrics
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_.*'
+    target_label: service
+    replacement: 'liquidity-pulse'
+  
+  # Add component labels based on metric names
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_(liquidity_index|repayment_support|bondx_score)'
+    target_label: component
+    replacement: 'core-metrics'
+  
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_forecast_.*'
+    target_label: component
+    replacement: 'forecasting'
+  
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_signal_.*'
+    target_label: component
+    replacement: 'signal-processing'
+  
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_websocket_.*'
+    target_label: component
+    replacement: 'websocket'
+  
+  - source_labels: [__name__]
+    regex: 'bondx_liquidity_pulse_calculation_.*'
+    target_label: component
+    replacement: 'performance'
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 30d
+    retention.size: 10GB
+
+# Remote write configuration (optional, for long-term storage)
+remote_write:
+  - url: "http://remote-storage:9201/write"
+    remote_timeout: 30s
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'bondx_liquidity_pulse_.*'
+        action: keep
+
+# Remote read configuration (optional, for long-term storage queries)
+remote_read:
+  - url: "http://remote-storage:9201/read"
+    read_timeout: 30s
+    read_recent: true
