@@ -6,94 +6,29 @@ This module includes all API endpoint routers for the bond marketplace.
 
 from fastapi import APIRouter
 
-from .bonds import router as bonds_router
-from .market import router as market_router
-from .analytics import router as analytics_router
-from .issuers import router as issuers_router
-from .ratings import router as ratings_router
-from .yield_curves import router as yield_curves_router
-from .ai import router as ai_router
-from .monitoring import router as monitoring_router
-from .auctions import router as auctions_router
-from .trading import router as trading_router
-from .risk_management import router as risk_management_router
-from .websocket import router as websocket_router
+# Import only the routers that exist
+from .dashboard import router as dashboard_router
+from .fractional_bonds import router as fractional_bonds_router
+from .simple_auctions import router as simple_auctions_router
 
 # Create main API router
 api_router = APIRouter()
 
-# Include all endpoint routers
+# Include only working routers
 api_router.include_router(
-    bonds_router,
+    dashboard_router,
+    prefix="/dashboard",
+    tags=["dashboard"]
+)
+
+api_router.include_router(
+    fractional_bonds_router,
     prefix="/bonds",
-    tags=["bonds"]
-)
-api_router.include_router(
-    market_router,
-    prefix="/market",
-    tags=["market"]
-)
-api_router.include_router(
-    analytics_router,
-    prefix="/analytics",
-    tags=["analytics"]
-)
-api_router.include_router(
-    issuers_router,
-    prefix="/issuers",
-    tags=["issuers"]
-)
-api_router.include_router(
-    ratings_router,
-    prefix="/ratings",
-    tags=["ratings"]
-)
-api_router.include_router(
-    yield_curves_router,
-    prefix="/yield-curves",
-    tags=["yield-curves"]
+    tags=["fractional_bonds"]
 )
 
-# Include AI router
 api_router.include_router(
-    ai_router,
-    prefix="/ai",
-    tags=["ai"]
-)
-
-# Include monitoring router
-api_router.include_router(
-    monitoring_router,
-    prefix="/monitoring",
-    tags=["monitoring"]
-)
-
-# Include auctions router
-api_router.include_router(
-    auctions_router,
+    simple_auctions_router,
     prefix="/auctions",
     tags=["auctions"]
 )
-
-# Include trading router
-api_router.include_router(
-    trading_router,
-    prefix="/trading",
-    tags=["trading"]
-)
-
-# Include risk management router
-api_router.include_router(
-    risk_management_router,
-    prefix="/risk",
-    tags=["risk_management"]
-)
-
-# Include WebSocket router
-api_router.include_router(
-    websocket_router,
-    tags=["websocket"]
-)
-
-# Export the main router
-__all__ = ["api_router"]

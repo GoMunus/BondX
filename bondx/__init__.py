@@ -10,13 +10,8 @@ __version__ = "0.1.0"
 __author__ = "BondX Team"
 __email__ = "team@bondx.com"
 
-from .core.config import settings
-from .core.logging import setup_logging
-
-# Initialize logging when package is imported
-setup_logging()
-
 __all__ = [
-    "settings",
-    "setup_logging",
+    "__version__",
+    "__author__",
+    "__email__",
 ]
