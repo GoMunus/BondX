@@ -1,0 +1,37 @@
+{
+  "name": "bondx-backend",
+  "version": "1.0.0",
+  "description": "Blockchain backend for BondX - fractional corporate bond trading platform",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts --network mumbai",
+    "seed": "hardhat run scripts/seed.ts --network mumbai",
+    "node": "hardhat node",
+    "clean": "hardhat clean"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "polygon",
+    "bonds",
+    "erc1155",
+    "defi"
+  ],
+  "author": "BondX Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@openzeppelin/contracts": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "ethers": "^6.8.0",
+    "hardhat": "^2.19.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

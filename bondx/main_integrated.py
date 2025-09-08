@@ -533,9 +533,14 @@ app = FastAPI(
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=[
+        "https://ui-bond-x.vercel.app",  # Your production frontend
+        "http://localhost:3000",  # React development server
+        "http://localhost:5173",  # Vite development server
+        "http://localhost:8080",  # Vue development server
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -546,6 +551,17 @@ app.include_router(mobile_router, prefix="/api/v1")
 app.include_router(trading_router, prefix="/api/v1")
 app.include_router(risk_router, prefix="/api/v1")
 app.include_router(websocket_router, prefix="/api/v1")
+
+# Include additional API routers for frontend
+from .api.v1.bonds import router as bonds_router
+from .api.v1.dashboard import router as dashboard_router
+from .api.v1.analytics import router as analytics_router
+from .api.v1.market import router as market_router
+
+app.include_router(bonds_router, prefix="/api/v1", tags=["bonds"])
+app.include_router(dashboard_router, prefix="/api/v1", tags=["dashboard"])
+app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
+app.include_router(market_router, prefix="/api/v1", tags=["market"])
 
 
 # Health check endpoints
